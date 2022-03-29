@@ -1,0 +1,5 @@
+Some extra datasets, named "data016a.mat" and "data017a.mat"
+
+Platform operating in  the same context (walls and poles), but following other paths, including some maneuvers which involve changing gear to reverse, and forward again.
+
+
