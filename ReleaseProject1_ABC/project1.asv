@@ -136,7 +136,7 @@ for i=1:ne
             end
 %             figure(1)
 %             hold on;
-%             plot(pathTrix,pathTriy,'c.');
+%             plot(pathTrix,pathTriy,'m.');
 %             heading=[pathTrix(end),pathTrix(end)+1.1*cos(pathTrih(end));pathTriy(end),pathTriy(end)+1.1*sin(pathTrih(end))]
 %             plot(heading(1,:),heading(2,:),'-y');
         continue;      
@@ -152,7 +152,7 @@ for i=1:ne
 end   
 disp('Loop of events ends.');
 disp('Showing ground truth (you would not achieve that, exactly.)');
-format longG
+% format longG
 avg=sum(avgtime)/size(avgtime,2)
 ShowVerification1(data,pathx,pathy,pathTrix,pathTriy,pathTrih);
 end
@@ -190,32 +190,33 @@ function OOI=processLiDAR(pose,ranges,etc,h0,h1,h2)
     xk_G=[];
     yk_G=[];
     for i=1:size(rr,2)-1
-        if (abs(rr(i+1)-rr(i)))>0.8 % if diff is greater than 1m then take a look
+        if (abs(rr(i+1)-rr(i)))>0.9 % if diff is greater than 1m then take a look
             j=1;
             temp=[];
             temp=[temp,i+1]; %store index of point of interest
             %group cluster of points if present by taking start and end index
             while((i+1+j)<size(rr,2))
+                clusterFound=false;
                 if(abs(rr(i+1)-rr(i+1+j))>0.5)
                     temp=[temp,i+j];
                     if i+j+2<size(rr,2)
                        i=i+j+1; %skip next point if possible as pole to wall
                                %movement will trigger detection 
+                       clusterFound=true;
                     end
                     break
+                end
+                if clusterFound==true
+                   break 
                 end
                 j=j+1;
             end
             tempx=[];
             tempy=[];
             if size(temp,2)==1
-                hhx=[hhx,rr(temp(1))*cos(aa(temp(1)))];
-                hhy=[hhy,rr(temp(1))*sin(aa(temp(1)))];
-            elseif temp(1)==temp(2)
-                hhx=[hhx,rr(temp(1))*cos(aa(temp(1)))];
-                hhy=[hhy,rr(temp(1))*sin(aa(temp(1)))];
-            elseif (0.05<=sqrt((x_cart(temp(2))-x_cart(temp(1)))^2+(y_cart(temp(2))-y_cart(temp(1)))^2))& ...
-                (sqrt((x_cart(temp(2))-x_cart(temp(1)))^2+(y_cart(temp(2))-y_cart(temp(1)))^2)<=0.3)
+                hhx=[hhx,rr(temp(1))*cos(temp(1))];
+                hhy=[hhy,rr(temp(1))*sin(temp(1))];
+            elseif (0.05<=sqrt((x_cart(temp(2))-x_cart(temp(1)))^2+(y_cart(temp(2))-y_cart(temp(1)))^2)<=0.3)
                 for k=temp(1):temp(2)
                     tempx=[tempx,rr(k)*cos(aa(k))];
                     tempy=[tempy,rr(k)*sin(aa(k))];
@@ -226,14 +227,15 @@ function OOI=processLiDAR(pose,ranges,etc,h0,h1,h2)
             end           
         end
     end
-    OOI=[hhx;hhy];
-    
+   
     %converting local to global
     h=pose(3);
     R=[[cos(h),-sin(h)];[sin(h),cos(h)]]; %rotate then translate
     cart=R*cart;    
     cart(1,:)=cart(1,:)+pose(1);
-    cart(2,:)=cart(2,:)+pose(2);   
+    cart(2,:)=cart(2,:)+pose(2);
+    
+    OOI=[hhx;hhy];
     set(h0(2),'xdata',cart(1,:),'ydata',cart(2,:));
 
   
@@ -269,7 +271,7 @@ function [hh,goodOOIx,goodOOIy,xk_G,yk_G]=dataAssoc(hh,OOI,sortedLandmarks,h0,po
             for j=1:size(sortedLandmarks,2)
 %                 sortedLandmarks(1,j)
 %                 sortedLandmarks(2,j)
-                dist=sqrt((sortedLandmarks(1,j)-sortedOOI(1,i)).^2+(sortedLandmarks(2,j)-sortedOOI(2,i)).^2);
+                dist=sqrt((sortedLandmarks(1,j)-sortedOOI(1,i))^2+(sortedLandmarks(2,j)-sortedOOI(2,i))^2);
                 if dist<0.051
                     goodOOIx=[goodOOIx,sortedLocalOOI(1,i)];
                     goodOOIy=[goodOOIy,sortedLocalOOI(2,i)];
@@ -286,7 +288,7 @@ function [hh,goodOOIx,goodOOIy,xk_G,yk_G]=dataAssoc(hh,OOI,sortedLandmarks,h0,po
                 end
             end
         end
-%         hh
+        hh
 %         good=[zeros(2,size(goodOOIx,2))];
 %         good(1,:)=goodOOIx;
 %         good(2,:)=goodOOIy;
@@ -349,9 +351,7 @@ figure(1)
 hold on;
 p=data.verify.poseL;
 plot(p(1,:),p(2,:),'r.');
-plot(pathTrix,pathTriy,'c*');
-plot(pathx,pathy,'b.','MarkerSize',4);
-heading=[pathTrix(end),pathTrix(end)+1.1*cos(pathTrih(end));pathTriy(end),pathTriy(end)+1.1*sin(pathTrih(end))];
-plot(heading(1,:),heading(2,:),'-y');
-h0=legend({'UGV','lidar scan','heading','COG of poles from lidar','landmarks','Walls (middle planes)','Ground truth (subsampled)','path taken (subsampled)','path taken (localised)'});
+plot(pathTrix,pathTriy,'m.');
+plot(pathx,pathy,'b.','MarkerSize',2);
+h0=legend({'UGV','lidar scan','heading','COG of poles from lidar','landmarks','Walls (middle planes)','Ground truth (subsampled)','path taken','path taken (localised)'});
 end
